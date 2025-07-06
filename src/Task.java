@@ -107,15 +107,11 @@ public class Task implements Serializable, Comparable<Task> {
 
         return String.format(
                 "%-20s | 重要性: %-5.2f | 截止: %s | %s\n" +
-                        "内容: %s\n" +
-                        "标签: %s",
+                        "内容: %s\n",
                 name, computeImportance(),
                 deadline.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                 status,
-                content,
-                tags.entrySet().stream()
-                        .map(e -> e.getKey() + "(" + e.getValue() + ")")
-                        .collect(Collectors.joining(", "))
+                content               
         );
     }
 
