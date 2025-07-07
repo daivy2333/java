@@ -22,14 +22,27 @@ public class Task implements Serializable, Comparable<Task> {
      boolean isCompleted = false;
      LocalDateTime completedTime;
      double cachedImportance = -1; // 缓存计算结果
+     final String category;
+     public static final List<String> CATEGORIES = Arrays.asList(
+        "学习", "娱乐", "日常", "锻炼", "其他"
+    );
+    
+    // 添加新字段
 
     public Task(String name, String content, LocalDateTime deadline,
-                int basePriority, Map<String, Integer> tags) {
+                int basePriority, Map<String, Integer> tags, String category) {
         this.name = Objects.requireNonNull(name, "任务名称不能为null");
         this.content = Objects.requireNonNull(content, "任务内容不能为null");
         this.deadline = Objects.requireNonNull(deadline, "截止时间不能为null");
         this.basePriority = validatePriority(basePriority);
         this.tags = new HashMap<>(tags);
+        
+        // 确保 category 在所有路径上都初始化
+        if (category != null && CATEGORIES.contains(category)) {
+            this.category = category;
+        } else {
+            this.category = "其他"; // 默认值
+        }
     }
 
     // 验证优先级范围 (1-10)
@@ -105,14 +118,18 @@ public class Task implements Serializable, Comparable<Task> {
                 "✅ 完成于 " + completedTime.format(DateTimeFormatter.ISO_LOCAL_TIME) :
                 "⏳ 剩余 " + Duration.between(LocalDateTime.now(), deadline).toHours() + "小时";
 
+            String tagsInfo = tags.entrySet().stream()
+            .map(entry -> entry.getKey() + ":" + entry.getValue())
+            .collect(Collectors.joining(", "));
+
         return String.format(
-                "%-20s | 重要性: %-5.2f | 截止: %s | %s\n" +
-                        "内容: %s\n",
-                name, computeImportance(),
-                deadline.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                status,
-                content               
-        );
+            "%-20s | 类别: %-10s | 重要性: %-5.2f | 截止: %s | %s\n" +
+            "内容: %s\n",
+            name, category, computeImportance(),
+            deadline.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            status,
+            content               
+    );
     }
 
     // 用于序列化的版本控制
@@ -134,5 +151,8 @@ public class Task implements Serializable, Comparable<Task> {
 
         // 转换为字符数组
         return importanceData.toCharArray();
+    }
+    public String getCategory() {
+        return category;
     }
 }

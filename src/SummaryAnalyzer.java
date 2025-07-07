@@ -1,37 +1,65 @@
 package src;
 // src/SummaryAnalyzer.java
 import java.io.*;
-import java.time.YearMonth;
+import java.time.*;
+import java.time.format.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SummaryAnalyzer {
     // 定义归档目录
     private static final String ARCHIVE_DIR = "DB/archive/";
 
-    // 显示月度总结
-    public static void showMonthlySummary() {
-        // 获取当前月份
+    // 生成月度总结信息
+    public static String generateMonthlySummary() {
         YearMonth now = YearMonth.now();
-        // 获取上个月份
         YearMonth last = now.minusMonths(1);
 
-        // 获取本月已完成任务数
-        int thisMonth = countTasks(now);
-        // 获取上月已完成任务数
-        int lastMonth = countTasks(last);
+        int thisMonthCount = countTasks(now);
+        int lastMonthCount = countTasks(last);
 
-        // 输出月度总结
-        System.out.println("\n===== 月度总结 =====");
-        System.out.println("本月已完成任务数: " + thisMonth);
-        System.out.println("上月已完成任务数: " + lastMonth);
-        // 如果上月已完成任务数大于0，计算增长率
-        if (lastMonth > 0) {
-            double growth = (thisMonth - lastMonth) * 100.0 / lastMonth;
-            System.out.printf("增长率: %.2f%%\n", growth);
+        StringBuilder sb = new StringBuilder();
+        sb.append("===== 月度总结 =====\n");
+        sb.append("本月已完成任务数: ").append(thisMonthCount).append("\n");
+        sb.append("上月已完成任务数: ").append(lastMonthCount).append("\n");
+        if (lastMonthCount > 0) {
+            double growth = (thisMonthCount - lastMonthCount) * 100.0 / lastMonthCount;
+            sb.append(String.format("增长率: %.2f%%\n", growth));
         } else {
-            // 否则输出无法计算
-            System.out.println("增长率: 无法计算（上月为0）");
+            sb.append("增长率: 无法计算（上月为0）\n");
         }
+        return sb.toString();
+    }
+    
+    // 获取月度任务详情
+    public static Map<YearMonth, List<Task>> getMonthlyTasks() {
+        Map<YearMonth, List<Task>> monthlyTasks = new TreeMap<>(Collections.reverseOrder());
+        File archiveDir = new File(ARCHIVE_DIR);
+        
+        if (!archiveDir.exists() || !archiveDir.isDirectory()) {
+            return monthlyTasks;
+        }
+        
+        File[] files = archiveDir.listFiles((dir, name) -> name.endsWith(".ser"));
+        if (files == null) return monthlyTasks;
+        
+        for (File file : files) {
+            try {
+                String fileName = file.getName();
+                String monthStr = fileName.substring(0, fileName.lastIndexOf('.'));
+                YearMonth yearMonth = YearMonth.parse(monthStr, DateTimeFormatter.ofPattern("yyyy-MM"));
+                
+                ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
+                List<Task> tasks = (List<Task>) in.readObject();
+                in.close();
+                
+                monthlyTasks.put(yearMonth, tasks);
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println("读取归档文件错误: " + e.getMessage());
+            }
+        }
+        
+        return monthlyTasks;
     }
 
     // 计算指定月份已完成任务数

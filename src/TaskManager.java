@@ -62,6 +62,13 @@ public class TaskManager {
         }
     }
 
+    // 获取指定标签的未完成任务，并按重要性排序
+    public List<Task> getTasksByCategory(String category) {
+    return tasks.stream()
+            .filter(t -> !t.isCompleted && category.equals(t.getCategory()))
+            .sorted((a, b) -> Double.compare(b.computeImportance(), a.computeImportance()))
+            .toList();}
+
     // 从文件加载任务
     @SuppressWarnings("unchecked")
     public void loadFromFile() {
